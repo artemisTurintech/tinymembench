@@ -1,0 +1,18 @@
+[
+  {
+    "stdmemcpy_MBps": 17920.6,
+    "stdmemset_MBps": 21914.5,
+    "sse2_nontemporal_fill_MBps": 74747.6,
+    "c_fill_MBps": 14584.4,
+    "sse2_copy_MBps": 11073.1,
+    "latency_32k_single_ns": 0.0,
+    "latency_32k_dual_ns": 0.0,
+    "latency_512k_single_ns": 28.9,
+    "latency_512k_dual_ns": 4.6,
+    "latency_8m_single_ns": 97.7,
+    "latency_8m_dual_ns": 104.9,
+    "latency_64m_single_ns": 85.2,
+    "latency_64m_dual_ns": 79.6,
+    "runtime_s": 43.813
+  }
+]
