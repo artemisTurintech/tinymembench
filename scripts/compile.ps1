@@ -1,16 +1,29 @@
 Set-Location "$PSScriptRoot\.."
 
-if (-not (Get-Command gcc -ErrorAction SilentlyContinue)) {
-    Write-Host "gcc not found - installing via scoop..."
-    if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
-        Write-Host "scoop not found - installing scoop..."
-        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-        if (-not $?) { Write-Error "scoop install failed"; exit 1 }
-    }
-    scoop install gcc
-    if (-not $?) { Write-Error "gcc install failed"; exit 1 }
+# --- Prerequisites --------------------------------------------------------
+# Required: gcc (includes assembler and linker via MinGW)
+# Installed via scoop (https://scoop.sh) if missing
+
+function Ensure-Scoop {
+    if (Get-Command scoop -ErrorAction SilentlyContinue) { return }
+    Write-Host "scoop not found - installing scoop..."
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+    if (-not $?) { Write-Error "scoop install failed"; exit 1 }
 }
+
+function Ensure-Package {
+    param([string]$Cmd, [string]$Package)
+    if (Get-Command $Cmd -ErrorAction SilentlyContinue) { return }
+    Write-Host "$Cmd not found - installing $Package via scoop..."
+    Ensure-Scoop
+    scoop install $Package
+    if (-not $?) { Write-Error "$Package install failed"; exit 1 }
+}
+
+Ensure-Package -Cmd gcc -Package gcc
+
+# --- Compile --------------------------------------------------------------
 
 gcc -O2 -c util.c -o util.o
 if (-not $?) { exit 1 }
