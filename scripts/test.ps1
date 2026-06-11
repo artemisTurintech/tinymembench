@@ -1,3 +1,4 @@
+Set-Location "$PSScriptRoot\.."
 gcc -O2 -DMAXREPEATS=2 -DLATBENCH_COUNT=10000 -c util.c -o util.o
 if (-not $?) { exit 1 }
 gcc -O2 -DMAXREPEATS=2 -DLATBENCH_COUNT=10000 -c asm-opt.c -o asm-opt.o
