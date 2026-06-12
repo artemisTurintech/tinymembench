@@ -5,8 +5,9 @@ param(
 Set-Location "$PSScriptRoot\.."
 
 if (-not (Test-Path ".\tinymembench.exe")) {
-    Write-Error "tinymembench.exe not found - run scripts\compile.ps1 first"
-    exit 1
+    Write-Host "tinymembench.exe not found - running compile.ps1..."
+    & "$PSScriptRoot\compile.ps1"
+    if (-not $?) { exit 1 }
 }
 
 for ($i = 1; $i -le $Runs; $i++) {
