@@ -109,31 +109,61 @@ def _stats(values: list) -> tuple:
     return mean, std
 
 
+def _better_when(key: str) -> str:
+    if key.endswith("_ns") or key == "runtime_s":
+        return "lower"
+    return "higher"
+
+
 all_keys = list(measurements[0].keys())
-summary  = {}
+result: dict = {"runs": REPEAT, "number": NUMBER}
+
 for key in all_keys:
     vals = [m[key] for m in measurements if key in m and m[key] is not None]
-    if vals:
-        mean, std = _stats(vals)
-        summary[key] = {"mean": round(mean, 3), "std": round(std, 3)}
+    if not vals:
+        continue
+    mean, std = _stats(vals)
+    result[f"{key}_mean"]        = round(mean, 3)
+    result[f"{key}_stdev"]       = round(std, 3)
+    result[f"{key}_better_when"] = _better_when(key)
+
+# Overall score: geometric mean of normalised bandwidth and latency.
+# Reference: 10,000 MB/s memcpy bandwidth, 100 ns DRAM (8 MB) latency.
+# Score of 100 = reference system; higher is better.
+try:
+    bw_score  = result["stdmemcpy_MBps_mean"] / 10000.0
+    lat_score = 100.0 / result["latency_8m_single_ns_mean"]
+    result["overall_score"]            = round(math.sqrt(bw_score * lat_score) * 100, 2)
+    result["overall_score_better_when"] = "higher"
+except (KeyError, ZeroDivisionError):
+    pass
+
+output = [result]
 
 # ── Write JSON ─────────────────────────────────────────────────────────────────
 with open(OUTPUT_FILE, "w") as f:
-    json.dump(measurements, f, indent=2)
+    json.dump(output, f, indent=2)
 
 # ── Print summary ──────────────────────────────────────────────────────────────
 COL = 36
-SEP = "─" * 68
+SEP = "-" * 72
 print(SEP)
 print(f"  Config: number={NUMBER}, repeat={REPEAT}")
 print(SEP)
-for key, s in summary.items():
+for key in all_keys:
+    mean_key = f"{key}_mean"
+    std_key  = f"{key}_stdev"
+    if mean_key not in result:
+        continue
     if key.endswith("_MBps"):
         unit = "MB/s"
     elif key.endswith("_ns"):
         unit = "ns"
     else:
         unit = "s"
-    print(f"  {key:<{COL}}  {s['mean']:>10.1f} ± {s['std']:>8.1f}  {unit}")
+    print(f"  {key:<{COL}}  {result[mean_key]:>10.1f} +/- {result[std_key]:>8.1f}  {unit}")
+if "overall_score" in result:
+    print(SEP)
+    print(f"  {'overall_score':<{COL}}  {result['overall_score']:>10.2f}  (ref=100)")
 print(SEP)
-print(f"  {len(measurements)} measurement(s) written to {OUTPUT_FILE}")
+print(f"  Results written to {OUTPUT_FILE}")
